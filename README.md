@@ -304,6 +304,43 @@ umount -R /mnt
 reboot
   ```
 
+### LUKS Key Setup (:warning:FOR REVISION:warning:)
+
+And now to avoid having to enter the password twice on boot, a key will be configured to automatically unlock the encrypted volume on boot. First, generate a random key.
+
+  ```sh
+[xchroot /mnt] # dd bs=1 count=64 if=/dev/urandom of=/boot/volume.key
+64+0 records in
+64+0 records out
+64 bytes copied, 0.000662757 s, 96.6 kB/s
+  ```
+
+Next, add the key to the encrypted volume.
+
+  ```sh
+[xchroot /mnt] # cryptsetup luksAddKey /dev/sda1 /boot/volume.key
+Enter any existing passphrase:
+  ```
+
+Change the permissions to protect the generated key.
+
+  ```sh
+[xchroot /mnt] # chmod 000 /boot/volume.key
+[xchroot /mnt] # chmod -R g-rwx,o-rwx /boot
+  ```
+
+This keyfile also needs to be added to /etc/crypttab. Again, this will be /dev/sda2 on EFI systems.
+
+  ```sh
+voidvm   /dev/sda1   /boot/volume.key   luks
+  ```
+
+And then the keyfile and crypttab need to be included in the initramfs. Create a new file at /etc/dracut.conf.d/10-crypt.conf with the following line:
+
+  ```sh
+install_items+=" /boot/volume.key /etc/crypttab "
+  ```
+
 ## Post-installation
 
 ### Install NVIDIA video driver and configure it (:warning:FOR REVISION:warning:)
