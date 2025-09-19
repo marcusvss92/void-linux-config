@@ -1,6 +1,66 @@
 # Void Linux Installation with BTRFS and LUKS for Pentesting
 
-## Void Live image (NOTE: [url-void-linux-documentation-about-libs-and-installation]
+## Void Live image (Void Linux Documentation - About Libs and Installation): [url-void-linux-documentation-about-libs-and-installation]
+
+## Requirements
+
+- UEFI system
+- Internet connection during installation
+- At least 8GB RAM (for pentesting tools)
+- 100GB+ disk space recommended
+
+## Introduction and Main Features
+
+In this guide, we gonna install Void Linux step-by-step and cover the following below:
+
+- UEFI with efibootmgr
+- BTRFS filesystem with LZO compress
+- System installation using the main Void Linux documentation and additional configurations
+- Hyprland configuration (LATER)
+
+- 🔐 LUKS Encryption with swapfile and hibernation support
+- 🛡️ Security Hardening with kernel parameters and system configuration
+- 🎯 Pentesting Tools including Metasploit, nmap, and more
+- 🚀 Modern Shell with ZSH and Oh-My-Zsh optimized for security work]
+- ⚡ Performance Optimization with dracut hostonly and compression
+- 🔧 Development Environment with multiple programming languages
+
+## Security Features
+
+- Kernel Hardening: KASLR, SMAP/SMEP, stack protection
+- Boot Security: Multiple boot modes (secure/pentest/compatible)
+- Network Security: Firewall, fail2ban, secure sysctl settings
+- File System: Proper permissions, audit logging
+- User Security: doas instead of sudo, restricted shells
+
+## Pentesting Tools Included
+
+- Network: nmap, masscan, netcat
+- Web: nikto, gobuster, sqlmap, Burp Suite setup
+- Password: john, hashcat, hydra
+- Wireless: aircrack-ng suite
+- Framework: Metasploit Framework (compiled from source)]
+- Analysis: wireshark, binwalk, foremost
+
+## Contributing
+
+1. Fork this repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## License
+
+MIT License - feel free to use and modify
+
+## Support
+
+- Create an issue in this repository
+- Check the troubleshooting guide
+- Join Void Linux community channels
+
+- :warning:Warning:warning:: This setup includes significant system modifications. Always test in a virtual machine first and maintain backups of important data, or create an additional disk to install it (driver caddy, etc).
 
 ### Logging in
 
@@ -113,7 +173,7 @@ OR you can use these commands below...
   chattr +C /mnt/swapfile
   btrfs property set /mnt/swapfile compression none
   chmod 600 /mnt/swapfile
-  dd if=/dev/zero of=/mnt/swapfile bs=1G count=16 status=progress
+  dd if=/dev/zero of=/mnt/swapfile bs=1G count=32 status=progress
   mkswap -U clear -L SWAP --file /mnt/wapfile
   swapon /mnt/swapfile
   ```
@@ -127,23 +187,31 @@ NOTE: This installation is for pentesting, so I will use Glibc for now.
   ARCH=x86_64
   mkdir -p /mnt/var/db/xbps/keys
   cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys
-  XBPS_ARCH=$ARCH xbps-install -S -R "$REPO" -r /mnt void-repo-nonfree base-system linux linux-firmware dracut btrfs-progs cryptsetup vim intel-ucode doas zsh zsh-completions NetworkManager
+  XBPS_ARCH=$ARCH xbps-install -S -R "$REPO" -r /mnt base-system void-repo-nonfree linux linux-firmware dracut btrfs-progs cryptsetup vim intel-ucode doas zsh zsh-completions wayland nftables 
   ```
   
 ### Creating the chroot and important system configuration
   
   ```sh
-  mount -t proc proc /mnt/proc
-  mount -t sysfs sys /mnt/sys
-  mount -o bind /dev /mnt/dev
+  mount -t proc none /mnt/proc
+  mount -t sysfs none /mnt/sys
+  mount --rbind /dev /mnt/dev
+  mount --rbind /run /mnt/run
   cp -L /etc/resolv.conf /mnt/etc
   chroot /mnt /bin/bash
 
   passwd root
   chsh -s /bin/bash root
-  useradd mvinicius
-  usermod -aG wheel,audio,video -s $(which bash) mvinicius
+
+  useradd -m -G wheel,audio,video,input,storage,optical,scanner mvinicius
   passwd mvinicius
+
+  useradd -m -G wheel,wireshark,dialout,netdev -s $(which zsh) pentester
+  passwd pentester
+
+  useradd -m -s /bin/bash sandbox
+
+  useradd -m -G wheel,docker,vboxusers developer
 
   echo void.local > /etc/hostname
 
@@ -161,15 +229,6 @@ NOTE: This installation is for pentesting, so I will use Glibc for now.
   xbps-reconfigure -f glibc-locales
   ls /usr/share/zoneinfo
   ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
-
-  cat <<EOF > /etc/hosts
-  #
-  # /etc/hosts: static lookup table for host names
-  #
-  127.0.0.1   localhost
-  ::1         localhost
-  127.0.0.1   void.localdomain void
-  EOF
 
   UEFI_UUID=$(blkid -s UUID -o value /dev/nvme0nxp1)
   LUKS_UUID=$(blkid -s UUID -o value /dev/nvme0nxp2)
@@ -194,9 +253,35 @@ NOTE: This installation is for pentesting, so I will use Glibc for now.
   dracut --force /boot/initramfs-$(uname -r).img $(uname -r)
   ```
 
-  OPTIONAL:
+### Network configuration
+
+  ```sh
+  cat <<EOF > /etc/hosts
+  #
+  # /etc/hosts: static lookup table for host names
+  #
+  127.0.0.1   localhost
+  ::1         localhost
+  127.0.0.1   void.localdomain void
+  EOF
+  ```
+
+! OPTIONAL ! Copy the proper `wpa_supplicant` config file to the system's mountpoint and run the proper `wpa_supplicant` steps to set Wi-Fi or stuff you need. Then, register and start the needed services:
+
   ```sh
   cp /etc/wpa_supplicant/wpa_supplicant-<interface>.conf /mnt/etc/wpa_supplicant/
+  ```
+
+  ```sh
+  doas ln -s /etc/sv/dhcpcd /var/service/
+  doas ln -s /etc/sv/wpa_supplicant /var/service/
+  ```
+
+OR use the NetworkManager:
+
+  ```sh
+  xbps-install -S NetworkManager
+  doas ln -s /etc/sv/NetworkManager /var/service
   ```
 
 ### Bootloader configuration
@@ -210,33 +295,107 @@ NOTE: This installation is for pentesting, so I will use Glibc for now.
   --unicode "root=/dev/mapper/cryptvoid initrd=\\initramfs-$(uname -r).img"
   ```
 
+### Unmounting mountpoint
+
+  ```sh
+  exit
+  exit
+  umount -R /mnt
+  reboot
+  ```
+
 ## Post-installation
+
+### Install NVIDIA video driver and configure it (:warning:FOR REVISION:warning:)
+  
+  ```sh
+doas xbps-install -Sy nvidia mesa mesa-vulkan-intel mesa-vulkan-nouveau vulkan vulkan-loader primus bbswitch
+doas ln -s /etc/sv/nvidia /var/service
+nvidia-smi
+  ```
+
+  ```sh
+doas tee /usr/local/bin/nvidia-run << 'EOF'
+#!/bin/bash
+# Wrapper to run applications in NVIDIA and power off the GPU after
+
+if [ $# -eq 0 ]; then
+    echo "Usage: nvidia-run <command> [arguments...]"
+    exit 1
+fi
+
+# Power on the GPU NVIDIA via bbswitch
+if [ -w /proc/acpi/bbswitch ]; then
+    echo ON | doas tee /proc/acpi/bbswitch > /dev/null
+fi
+
+# Set up the PRIME Render Offload variables
+export __NV_PRIME_RENDER_OFFLOAD=1
+export __GLX_VENDOR_LIBRARY_NAME=nvidia
+export __VK_LAYER_NV_optimus=NVIDIA_only
+
+# For OpenGL programs, use primusrun if available
+if command -v primusrun >/dev/null 2>&1; then
+    primusrun "$@"
+else
+    "$@"
+fi
+
+RET=$?
+
+# Power off the GPU NVIDIA after closing a program
+if [ -w /proc/acpi/bbswitch ]; then
+    echo OFF | doas tee /proc/acpi/bbswitch > /dev/null
+fi
+
+exit $RET
+EOF
+  ```
+
+  ```sh
+doas mkdir -p /etc/sv/bbswitch
+
+doas tee /etc/sv/bbswitch/run << 'EOF'
+#!/bin/sh
+# Runit service for setting flag OFF in GPU NVIDIA at the boot process
+echo OFF > /proc/acpi/bbswitch
+exec sleep infinity
+
+# How to configure it:
+# 1. doas chmod +x /etc/sv/bbswitch/run
+# 2. doas ln -s /etc/sv/bbswitch /var/service
+
+# How to test it:
+# 1. Reboot the system.
+# 2. Verify the status: cat /proc/acpi/bbswitch # It must show "OFF": 0000:01:00.0 OFF
+# 3. nvidia-run glxinfo | grep "OpenGL renderer"
+EOF
+
+doas chmod +x /etc/sv/bbswitch/run
+doas ln -s /etc/sv/bbswitch /var/service/
+  ```
 
 ### Network configuration
 
-OPTIONAL: Run the proper `wpa_supplicant` steps to set Wi-Fi or stuff you need. Then, register and start the needed services:
-```sh
-doas ln -s /etc/sv/dhcpcd /var/service/
-doas ln -s /etc/sv/wpa_supplicant /var/service/
-```
+  ```sh
+  doas xbps-install -Sy nftables
+  doas /usr/local/bin/basic-firewall.sh
+  doas nft list ruleset > /etc/nftables.conf
+  doas ln -s /etc/sv/nftables /var/service/
+  doas sv start nftables
+  ```
 
-OR
-
-```sh
-doas ln -s /etc/sv/NetworkManager /var/service
-```
-  
 ### Security configuration
 
 #### Locking the root account
 :warning: **Important** :warning:  
 Only run this after setting up the main user!
+
   ```sh
   sudo passwd -dl root
   ```
 
-
-
+### Others configurations (:warning:FOR REVISION:warning:)
   
   ```
   truncate -s 2M keyfile.bin # OR dd bs=515 count=4 if=/dev/urandom of=/boot/keyfile.bin
@@ -251,20 +410,6 @@ Only run this after setting up the main user!
   ln -s /etc/sv/dhc /etc/runit/runsvdir/default
   # OR
   <USE-MKINITCPIO>
-  ```
-    
-### Step 2 - Install software/programs/tools
-  
-  ```
-  xbps-install <list-of-desired-programs>
-  ```
-    
-### Step 3 - Link services
-  
-  ```
-  xbps-install NetworkManager
-  ln -s /etc/sv/NetworkManager /var/service
-  xbps-reconfigure -fa
   ```
     
 ### Step 4 - Exit and Reboot
