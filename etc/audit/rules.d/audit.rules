@@ -1,0 +1,7 @@
+# Monitor important files
+-w /etc/passwd -p wa -k identity
+-w /etc/group -p wa -k identity
+-w /etc/shadow -p wa -k identity
+-w /etc/doas.conf -p wa -k actions
+-w /var/log/faillog -p wa -k logins
+-w /var/log/lastlog -p wa -k logins
