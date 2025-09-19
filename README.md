@@ -145,6 +145,8 @@ OR you can use these commands below...
 
   ```sh
 dd if=/dev/urandom of=/dev/nvmexnx bs=1M oflag=direct status=progress
+xbps-install -Su xbps
+xbps-install -Sy parted
 parted -a optimal /dev/nvmexn1
 mklabel gpt
 unit mib
@@ -201,7 +203,7 @@ mount | grep -E "/dev/mapper/cryptvoid|/dev/nvmexnxp1"
   ```sh
 truncate -s 0 /mnt/swapfile
 chattr +C /mnt/swapfile
-btrfs property set /mnt/swapfile compression none
+#btrfs property set /mnt/swapfile compression none
 chmod 600 /mnt/swapfile
 dd if=/dev/zero of=/mnt/swapfile bs=1G count=32 status=progress
 mkswap -U clear -L SWAP --file /mnt/wapfile
@@ -217,7 +219,7 @@ REPO=https://repo-default.voidlinux.org/current
 ARCH=x86_64
 mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys
-XBPS_ARCH=$ARCH xbps-install -S -R "$REPO" -r /mnt base-system void-repo-nonfree linux linux-firmware dracut btrfs-progs cryptsetup vim intel-ucode doas zsh zsh-completions wayland nftables 
+XBPS_ARCH=$ARCH xbps-install -S -R "$REPO" -r /mnt base-system void-repo-nonfree linux linux-firmware linux-headers dracut btrfs-progs cryptsetup vim opendoas zsh zsh-completions wayland nftables 
   ```
   
 ### Creating the chroot and important system configuration
