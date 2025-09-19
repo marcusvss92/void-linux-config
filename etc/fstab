@@ -7,3 +7,5 @@ UUID=$ROOT_UUID /opt btrfs $BTRFS_OPTS,subvol=@opt 0 2
 UUID=$ROOT_UUID /.snapshots btrfs $BTRFS_OPTS,subvol=@snapshots 0 2
 /swapfile none swap defaults 0 1
 tmpfs /tmp tmpfs defaults,nosuid,nodev,noatime,mode=1777 0 0
+# tmpfs /tmp tmpfs defaults,rw,nosuid,nodev,noexec,relatime,size=2G 0 0
+# tmpfs /run/shm tmpfs defaults,nodev,nosuid,noexec 0 0
