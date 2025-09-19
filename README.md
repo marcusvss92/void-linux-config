@@ -22,6 +22,23 @@
 - Installing efibootmgr
 - **OPTIONAL:** LUKS Key Setup
 
+## Config file
+
+- dracut.conf
+- rc.conf
+- fstab
+- locale.conf
+- libc-locales
+- hostname
+- 10-luks.conf
+- 60-graphics.conf
+- intel_ucode.conf
+
+## Scripts
+
+- update-efi-entry.sh
+- btrfs-map-physical.c
+
 ## Introduction and Main Features
 
 In this guide, we gonna install Void Linux step-by-step and cover the following below:
