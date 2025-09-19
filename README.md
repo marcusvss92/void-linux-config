@@ -309,7 +309,7 @@ OR use the NetworkManager:
 ### Install NVIDIA video driver and configure it (:warning:FOR REVISION:warning:)
   
   ```sh
-doas xbps-install -Sy nvidia mesa mesa-vulkan-intel mesa-vulkan-nouveau vulkan vulkan-loader primus bbswitch
+doas xbps-install -Sy nvidia vulkan vulkan-loader primus bbswitch
 doas ln -s /etc/sv/nvidia /var/service
 nvidia-smi
   ```
