@@ -9,6 +9,19 @@
 - At least 8GB RAM (for pentesting tools)
 - 100GB+ disk space recommended
 
+## Installation section and steps
+
+- Prepare filesystems
+- Create a new root and mount filesystems
+- Base installation
+- The XBPS method
+- Configure filesystems
+- Entering the Chroot
+- Installation Configuration
+- Set a Root Password\
+- Installing efibootmgr
+- **OPTIONAL:** LUKS Key Setup
+
 ## Introduction and Main Features
 
 In this guide, we gonna install Void Linux step-by-step and cover the following below:
