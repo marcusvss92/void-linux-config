@@ -1,0 +1,3 @@
+alias nvidia-on='doas tee /proc/acpi/bbswitch <<<ON'
+alias nvidia-off='doas tee /proc/acpi/bbswitch <<<OFF'
+alias nvidia-run='nvidia-on && primusrun'
