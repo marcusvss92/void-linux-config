@@ -14,6 +14,9 @@ GRAPHICS_PARAMS="nvidia-drm.modeset=1 nvidia-drm.fbdev=1 nvidia.NVreg_PreserveVi
 # For better hybrid support
 GRAPHICS_PARAMS+=" i915.force_probe=* i915.enable_psr=0"
 
+# Specific parameters for setting more control over powwer consumption in NVIDIA GPU
+GRAPHICS_PARAMS_POWERSAVE="nvidia-drm.modeset=1 nvidia.NVreg_DynamicPowerManagement=0x02"
+
 # NVIDIA flags
 NVIDIA_FLAGS="nvidia_drm.modeset=1"
 
