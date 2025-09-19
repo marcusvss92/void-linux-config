@@ -1,22 +1,22 @@
 #!/bin/bash
-# Wrapper para rodar aplicativos na NVIDIA e desligar GPU depois
+# Wrapper to run applications in NVIDIA and power off the GPU after
 
 if [ $# -eq 0 ]; then
-    echo "Uso: nvidia-run <comando> [argumentos...]"
+    echo "Usage: nvidia-run <command> [arguments...]"
     exit 1
 fi
 
-# Liga a GPU NVIDIA via bbswitch
+# Power on the GPU NVIDIA via bbswitch
 if [ -w /proc/acpi/bbswitch ]; then
     echo ON | doas tee /proc/acpi/bbswitch > /dev/null
 fi
 
-# Variáveis para PRIME Render Offload
+# Set up the PRIME Render Offload variables
 export __NV_PRIME_RENDER_OFFLOAD=1
 export __GLX_VENDOR_LIBRARY_NAME=nvidia
 export __VK_LAYER_NV_optimus=NVIDIA_only
 
-# Para programas OpenGL, usar primusrun se disponível
+# For OpenGL programs, use primusrun if available
 if command -v primusrun >/dev/null 2>&1; then
     primusrun "$@"
 else
@@ -25,7 +25,7 @@ fi
 
 RET=$?
 
-# Desliga a GPU NVIDIA após encerrar o programa
+# Power off the GPU NVIDIA after closing a program
 if [ -w /proc/acpi/bbswitch ]; then
     echo OFF | doas tee /proc/acpi/bbswitch > /dev/null
 fi
