@@ -20,14 +20,6 @@ NVIDIA_FLAGS="nvidia_drm.modeset=1"
 # No flags
 NO_FLAGS=""
 
-# Exemplo de entrada EFI atualizada:
-#efibootmgr --create \
-#    --disk /dev/sda \
-#    --part 1 \
-#    --label "Void Linux Wayland" \
-#    --loader /vmlinuz-${KERNEL_VERSION} \
-#    --unicode "root=UUID=${ROOT_UUID} ro ${HARDENING_FLAGS} ${GRAPHICS_PARAMS} ${HIBERNATION_PARAMS} initrd=\\initramfs-${KERNEL_VERSION}.img"
-
 # Check for hibernation configuration
 HIBERNATION_PARAMS=""
 if [[ -f /etc/resume-offset.conf ]]; then
