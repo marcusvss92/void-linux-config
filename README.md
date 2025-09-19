@@ -309,7 +309,7 @@ OR use the NetworkManager:
 ### Install NVIDIA video driver and configure it (:warning:FOR REVISION:warning:)
   
   ```sh
-doas xbps-install -Sy nvidia vulkan vulkan-loader primus bbswitch
+doas xbps-install -Sy nvidia nvidia-opencl nvidia-vaapi-driver nvidia-libs libva-vdpau-driver libva-glx vulkan vulkan-loader mesa mesa-dri mesa-vulkan-intel mesa-vaapi mesa-vdpau gstreamer1 primus bbswitch bumblebee nvtop
 doas ln -s /etc/sv/nvidia /var/service
 nvidia-smi
   ```
@@ -375,7 +375,15 @@ doas chmod +x /etc/sv/bbswitch/run
 doas ln -s /etc/sv/bbswitch /var/service/
   ```
 
-### Network configuration
+### Security configuration
+
+#### Locking the root account
+:warning: **Important** :warning:  
+Only run this after setting up the main user!
+
+  ```sh
+  sudo passwd -dl root
+  ```
 
   ```sh
   doas xbps-install -Sy nftables
@@ -385,14 +393,16 @@ doas ln -s /etc/sv/bbswitch /var/service/
   doas sv start nftables
   ```
 
-### Security configuration
-
-#### Locking the root account
-:warning: **Important** :warning:  
-Only run this after setting up the main user!
+  ```sh
+auditd
+  ```
 
   ```sh
-  sudo passwd -dl root
+fail2ban
+  ```
+
+  ```sh
+aide
   ```
 
 ### Others configurations (:warning:FOR REVISION:warning:)
