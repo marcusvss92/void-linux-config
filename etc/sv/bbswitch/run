@@ -1,0 +1,9 @@
+  #!/bin/sh
+  # Runit service for setting GPU NVIDIA off in boot process
+  echo OFF > /proc/acpi/bbswitch
+  exec sleep infinity
+
+  # How to test it:
+  # 1. Reboot the system.
+  # 2. Verify the status: cat /proc/acpi/bbswitch # It must show "OFF": 0000:01:00.0 OFF
+  # 3. nvidia-run glxinfo | grep "OpenGL renderer"
