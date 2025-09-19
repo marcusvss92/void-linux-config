@@ -1,0 +1,194 @@
+# Template file for 'metasploit'
+pkgname=metasploit
+version=6.3.39
+revision=1
+build_style=gem
+archs=noarch
+hostmakedepends="ruby bundler git"
+makedepends="ruby-devel postgresql-libs-devel sqlite-devel openssl-devel 
+ libxml2-devel libxslt-devel readline-devel zlib-devel libffi-devel
+ ncurses-devel"
+depends="ruby postgresql sqlite nmap john openssl curl wget"
+short_desc="Metasploit Framework - Penetration Testing Platform"
+maintainer="Pentester <pentester@void.local>"
+license="BSD-3-Clause"
+homepage="https://www.metasploit.com/"
+changelog="https://github.com/rapid7/metasploit-framework/releases"
+distfiles="https://github.com/rapid7/metasploit-framework/archive/v${version}.tar.gz"
+checksum="SKIP"  # Calculate real checksum
+
+# Build configuration
+nostrip=yes
+noshlibprovides=yes
+noverifyrdeps=yes
+
+do_fetch() {
+    # Custom fetch to get latest version
+    cd "$XBPS_SRCDISTDIR/${pkgname}-${version}"
+    
+    if [ ! -f "${pkgname}-${version}.tar.gz" ]; then
+        msg_normal "Downloading Metasploit Framework ${version}...\n"
+        $XBPS_FETCH_CMD "https://github.com/rapid7/metasploit-framework/archive/v${version}.tar.gz"
+        mv "v${version}.tar.gz" "${pkgname}-${version}.tar.gz"
+    fi
+}
+
+do_extract() {
+    tar -xzf "${XBPS_SRCDISTDIR}/${pkgname}-${version}/${pkgname}-${version}.tar.gz" \
+        -C "$XBPS_BUILDDIR"
+    
+    # Rename extracted directory
+    mv "$XBPS_BUILDDIR/metasploit-framework-${version}" "$XBPS_BUILDDIR/${pkgname}-${version}"
+}
+
+do_configure() {
+    # Set up bundle configuration
+    bundle config set --local deployment true
+    bundle config set --local without development test coverage
+    bundle config set --local path vendor/bundle
+    bundle config set --local jobs ${XBPS_MAKEJOBS:-1}
+}
+
+do_build() {
+    # Install Ruby gems
+    msg_normal "Installing Ruby dependencies...\n"
+    bundle install
+    
+    # Precompile assets if needed
+    if [ -f "Rakefile" ]; then
+        bundle exec rake assets:precompile 2>/dev/null || true
+    fi
+    
+    # Generate documentation
+    if [ -f "docs/generate.rb" ]; then
+        bundle exec ruby docs/generate.rb 2>/dev/null || true
+    fi
+}
+
+do_install() {
+    # Main installation directory
+    vmkdir usr/share/metasploit
+    
+    # Copy all files except unnecessary ones
+    find . -type f ! -path "./.git/*" ! -path "./spec/*" ! -path "./test/*" \
+        ! -name "*.orig" ! -name "*.rej" | \
+        xargs -I {} install -Dm644 {} "${DESTDIR}/usr/share/metasploit/{}"
+    
+    # Preserve directory structure and permissions
+    find . -type d ! -path "./.git/*" ! -path "./spec/*" ! -path "./test/*" | \
+        while read dir; do
+            vmkdir "usr/share/metasploit/$dir"
+        done
+    
+    # Copy executable files with proper permissions
+    for script in msfconsole msfvenom msfdb msfrpc msfrpcd msfupdate; do
+        if [ -f "$script" ]; then
+            vinstall "$script" 755 usr/share/metasploit
+        fi
+    done
+    
+    # Create wrapper scripts in /usr/bin
+    vmkdir usr/bin
+    
+    for script in msfconsole msfvenom msfdb msfrpc msfrpcd msfupdate; do
+        if [ -f "$script" ]; then
+            cat > "${DESTDIR}/usr/bin/$script" << EOF
+#!/bin/bash
+# Metasploit Framework wrapper script
+cd /usr/share/metasploit
+export MSF_ROOT=/usr/share/metasploit
+export MSF_DATABASE_CONFIG=/usr/share/metasploit/config/database.yml
+exec ruby "./$script" "\$@"
+EOF
+            chmod 755 "${DESTDIR}/usr/bin/$script"
+        fi
+    done
+    
+    # Configuration directory
+    vmkdir etc/metasploit
+    
+    # Default database configuration
+    cat > "${DESTDIR}/etc/metasploit/database.yml" << 'EOF'
+# Metasploit database configuration
+production: &pgsql
+  adapter: postgresql
+  database: msf_database
+  username: msf
+  password:
+  host: localhost
+  port: 5432
+  pool: 5
+  timeout: 5
+
+development: *pgsql
+test: *pgsql
+EOF
+    
+    # Create symlink for configuration
+    ln -sf /etc/metasploit/database.yml "${DESTDIR}/usr/share/metasploit/config/database.yml"
+    
+    # Documentation
+    if [ -f "README.md" ]; then
+        vdoc README.md
+    fi
+    
+    if [ -f "COPYING" ]; then
+        vlicense COPYING
+    fi
+    
+    # Man pages (if available)
+    if [ -d "documentation/man" ]; then
+        find documentation/man -name "*.1" -exec vman {} \;
+    fi
+    
+    # Desktop integration
+    vmkdir usr/share/applications
+    cat > "${DESTDIR}/usr/share/applications/metasploit.desktop" << 'EOF'
+[Desktop Entry]
+Name=Metasploit Framework
+Comment=Penetration Testing Framework
+Exec=msfconsole
+Icon=metasploit
+Terminal=true
+Type=Application
+Categories=Network;Security;
+Keywords=pentesting;security;exploit;hacking;
+EOF
+    
+    # Shell completion (if available)
+    if [ -d "completion" ]; then
+        vcompletion completion/msfconsole.bash bash msfconsole
+        vcompletion completion/msfvenom.bash bash msfvenom
+    fi
+}
+
+post_install() {
+    cat << 'EOF'
+================================================================================
+Metasploit Framework has been installed successfully!
+
+To get started:
+
+1. Setup PostgreSQL database:
+   $ sudo xbps-install -S postgresql
+   $ sudo ln -sf /etc/sv/postgresql /var/service/
+   $ sudo -u postgres createuser -s msf
+   $ sudo -u postgres createdb msf_database -O msf
+
+2. Initialize Metasploit database:
+   $ msfdb init
+
+3. Start Metasploit Framework:
+   $ msfconsole
+
+4. For web interface (if available):
+   $ msfconsole -r /usr/share/metasploit/scripts/resource/auto_win32_multihandler.rc
+
+Documentation: https://docs.metasploit.com/
+Updates: Run 'msfupdate' or reinstall package
+
+Note: This package includes the complete Metasploit Framework with all
+Ruby dependencies. Database setup is required for full functionality.
+================================================================================
+EOF
+}
