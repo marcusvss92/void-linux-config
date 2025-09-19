@@ -248,7 +248,7 @@ NOTE: This installation is for pentesting, so I will use Glibc for now.
 
   echo 'add_dracutmodules+="crypt btrfs resume"' >> /etc/dracut.conf
   echo 'tmpdir=/tmp' >> /etc/dracut.conf
-  echo 'early_microcode="yes" >> /etc/dracut.conf.d/intel_ucode.conf
+  echo 'early_microcode="yes"' >> /etc/dracut.conf.d/intel_ucode.conf
   dracut --force --hostonly --kver <kernel-version>
   dracut --force /boot/initramfs-$(uname -r).img $(uname -r)
   ```
