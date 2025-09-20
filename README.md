@@ -243,6 +243,10 @@ XBPS_ARCH=$ARCH xbps-install -S -R "$REPO" -r /mnt base-system void-repo-nonfree
 ### Creating the chroot and important system configuration
   
   ```sh
+for i in /dev /dev/pts /proc /sys /sys/firmware/efi/efivars /run; do mount -B $i /mnt$i; done
+  ```
+
+  ```sh
 mount -t proc none /mnt/proc
 mount -t sysfs none /mnt/sys
 mount --rbind /dev /mnt/dev
