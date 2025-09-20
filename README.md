@@ -1,4 +1,4 @@
-# Void Linux Installation with BTRFS and LUKS for Pentesting
+por# Void Linux Installation with BTRFS and LUKS for Pentesting
 
 ## Void Live image (Void Linux Documentation - About Libs and Installation): [url-void-linux-documentation-about-libs-and-installation]
 
@@ -237,7 +237,7 @@ REPO=https://repo-default.voidlinux.org/current
 ARCH=x86_64
 mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys
-XBPS_ARCH=$ARCH xbps-install -S -R "$REPO" -r /mnt base-system void-repo-nonfree linux linux-firmware linux-headers dracut btrfs-progs cryptsetup vim opendoas zsh zsh-completions wayland nftables 
+XBPS_ARCH=$ARCH xbps-install -S -R "$REPO" -r /mnt base-system void-repo-nonfree linux linux-firmware linux-headers efibootmgr dracut btrfs-progs cryptsetup vim opendoas zsh zsh-completions wayland nftables 
   ```
   
 ### Creating the chroot and important system configuration
