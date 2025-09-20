@@ -198,6 +198,24 @@ mount -o rw,noatime /dev/nvmexnxp1 /mnt/boot/efi
 mount | grep -E "/dev/mapper/cryptvoid|/dev/nvmexnxp1"
   ```
   
+```sh
+UEFI_UUID=$(blkid -s UUID -o value /dev/nvme0nxp1)
+LUKS_UUID=$(blkid -s UUID -o value /dev/nvme0nxp2)
+ROOT_UUID=$(blkid -s UUID -o value /dev/mapper/cryptvoid)
+
+cat <<EOF > /mnt/etc/fstab
+UUID=$UEFI_UUID /boot/efi vfat defaults,noatime 0 2
+UUID=$ROOT_UUID / btrfs $BTRFS_OPTS,subvol=@ 0 1
+UUID=$ROOT_UUID /home btrfs $BTRFS_OPTS,subvol=@home 0 2
+UUID=$ROOT_UUID /usr btrfs $BTRFS_OPTS,subvol=@usr 0 2
+UUID=$ROOT_UUID /var btrfs $BTRFS_OPTS,subvol=@var 0 2
+UUID=$ROOT_UUID /opt btrfs $BTRFS_OPTS,subvol=@opt 0 2
+UUID=$ROOT_UUID /.snapshots btrfs $BTRFS_OPTS,subvol=@snapshots 0 2
+/swapfile none swap defaults 0 1
+tmpfs /tmp tmpfs defaults,nosuid,nodev,noatime,mode=1777 0 0
+EOF
+```
+
 ### Swap file creation
   
   ```sh
@@ -238,11 +256,15 @@ chsh -s /bin/bash root
 useradd -m -G wheel,audio,video,input,storage,optical,scanner mvinicius
 passwd mvinicius
 
+groupadd Wireshark
+groupadd netdev
 useradd -m -G wheel,wireshark,dialout,netdev -s $(which zsh) pentester
 passwd pentester
 
 useradd -m -s /bin/bash sandbox
 
+groupadd docker
+groupadd vboxusers
 useradd -m -G wheel,docker,vboxusers developer
 
 echo void.local > /etc/hostname
@@ -262,23 +284,7 @@ xbps-reconfigure -f glibc-locales
 ls /usr/share/zoneinfo
 ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
 
-UEFI_UUID=$(blkid -s UUID -o value /dev/nvme0nxp1)
-LUKS_UUID=$(blkid -s UUID -o value /dev/nvme0nxp2)
-ROOT_UUID=$(blkid -s UUID -o value /dev/mapper/cryptvoid)
-  
-cat <<EOF > /mnt/etc/fstab
-UUID=$UEFI_UUID /boot/efi vfat defaults,noatime 0 2
-UUID=$ROOT_UUID / btrfs $BTRFS_OPTS,subvol=@ 0 1
-UUID=$ROOT_UUID /home btrfs $BTRFS_OPTS,subvol=@home 0 2
-UUID=$ROOT_UUID /usr btrfs $BTRFS_OPTS,subvol=@usr 0 2
-UUID=$ROOT_UUID /var btrfs $BTRFS_OPTS,subvol=@var 0 2
-UUID=$ROOT_UUID /opt btrfs $BTRFS_OPTS,subvol=@opt 0 2
-UUID=$ROOT_UUID /.snapshots btrfs $BTRFS_OPTS,subvol=@snapshots 0 2
-/swapfile none swap defaults 0 1
-tmpfs /tmp tmpfs defaults,nosuid,nodev,noatime,mode=1777 0 0
-EOF
-
-echo 'add_dracutmodules+="crypt btrfs resume"' >> /etc/dracut.conf
+echo 'add_dracutmodules+=" crypt btrfs resume "' >> /etc/dracut.conf
 echo 'tmpdir=/tmp' >> /etc/dracut.conf
 echo 'early_microcode="yes"' >> /etc/dracut.conf.d/intel_ucode.conf
 dracut --force --hostonly --kver <kernel-version>
