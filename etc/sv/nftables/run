@@ -1,0 +1,36 @@
+#!/bin/bash
+# /etc/sv/nftables/run
+# Serviço runit para nftables
+
+exec 2>&1
+
+# Carregar módulos necessários
+modprobe nf_tables 2>/dev/null || true
+modprobe nft_meta 2>/dev/null || true
+modprobe nft_ct 2>/dev/null || true
+
+# Aguardar um pouco para módulos carregarem
+sleep 2
+
+# Aplicar regras do firewall
+if [ -f /etc/nftables.conf ]; then
+    echo "Carregando regras do nftables de /etc/nftables.conf"
+    nft -f /etc/nftables.conf
+else
+    echo "Arquivo /etc/nftables.conf não encontrado, aplicando firewall padrão"
+    /usr/local/bin/setup-firewall.sh secure
+fi
+
+# Manter o serviço rodando (nftables não é um daemon)
+while true; do
+    sleep 30
+    # Verificar se as regras ainda estão ativas
+    if ! nft list tables | grep -q "inet filter"; then
+        echo "Regras do nftables perdidas, reaplicando..."
+        if [ -f /etc/nftables.conf ]; then
+            nft -f /etc/nftables.conf
+        else
+            /usr/local/bin/setup-firewall.sh secure
+        fi
+    fi
+done
