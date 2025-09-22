@@ -1,0 +1,14 @@
+#!/bin/bash
+# /etc/sv/nftables/finish
+# Script executado quando o serviço nftables para
+
+exec 2>&1
+
+echo "Serviço nftables finalizando..."
+
+# Opcionalmente, limpar regras ao parar o serviço
+# Descomente a linha abaixo se quiser limpar as regras ao parar
+# nft flush ruleset
+
+# Aguardar antes de permitir restart
+sleep 5
