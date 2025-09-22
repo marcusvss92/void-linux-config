@@ -346,12 +346,6 @@ doas ln -s /etc/sv/elogind /var/service
   
   ```sh
 efibootmgr --create \
---disk /dev/sda \
---part 1 \
---label "Void Linux Hardened" \
---loader /vmlinuz-$(uname -r) \
---unicode "root=UUID=$ROOT_UUID rootfstype=btrfs initrd=\\initramfs-$(uname -r).img"
-efibootmgr --create \
 --disk /dev/nvme1n1 \
 --part 1 \
 --label "Void Linux" \
