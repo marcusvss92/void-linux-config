@@ -373,8 +373,8 @@ reboot
 ### Install NVIDIA video driver and configure it (:warning:FOR REVISION:warning:)
   
   ```sh
-doas xbps-install -Sy nvidia nvidia-opencl nvidia-vaapi-driver nvidia-libs libva-vdpau-driver libva-glx vulkan vulkan-loader mesa mesa-dri mesa-vulkan-intel mesa-vaapi mesa-vdpau gstreamer1 primus bbswitch bumblebee nvtop
-doas ln -s /etc/sv/nvidia /var/service
+doas xbps-install -Sy mesa mesa-dri mesa-vaapi mesa-vdpau mesa-vulkan-intel vdpauinfo nvidia nvidia-firmware nvidia-dkms nvidia-opencl nvidia-gtklibs nvidia-libs nvidia-vaapi-driver libvdpau libva-glx libva-utils vulkan vulkan-loader Vulkan-Headers Vulkan-Tools Vulkan-Utility-LIbraries Vulkan-ValidationLayers gstreamer1 gstreamer-vaapi primus bbswitch bumblebee nvtop
+doas ln -s /etc/sv/nvidia-powerd /var/service
 nvidia-smi
   ```
 
