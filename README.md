@@ -356,7 +356,7 @@ efibootmgr --create \
 --part 1 \
 --label "Void Linux" \
 --loader /vmlinuz-$(uname -r) \
---unicode "rd.luks.uuid=$LUKS_UUID rd.luks.allow-discards root=UUID=$ROOT_UUID rootfstype=btrfs rw initrd=\\initramfs-$(uname -r).img nvidia-drm.modeset=1 nvidia-drm.fbdev=1 nvidia.NVreg_OpenRmEnableUnsupportedGpus=1 quiet loglevel=3"
+--unicode "rd.luks.uuid=$LUKS_UUID rd.luks.allow-discards root=UUID=$ROOT_UUID rootfstype=btrfs rw initrd=\\initramfs-$(uname -r).img nvidia-drm.modeset=1 nvidia-drm.fbdev=1 nvidia.NVreg_OpenRmEnableUnsupportedGpus=1 nvidia.NVreg_DynamicPowerManagement=0x02 quiet loglevel=3"
   ```
 
 ### Unmounting mountpoint
