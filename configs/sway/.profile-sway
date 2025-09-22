@@ -1,0 +1,6 @@
+if [[ -z $DISPLAY ]] && [[ $(tty) = /dev/tty1 ]]; then
+    export WLR_DRM_DEVICES="/dev/dri/card0"
+    unset GBM_BACKEND
+    unset __GLX_VENDOR_LIBRARY_NAME
+    exec sway
+fi
