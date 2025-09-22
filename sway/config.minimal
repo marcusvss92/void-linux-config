@@ -1,0 +1,34 @@
+# Minimal sway configuration
+
+# Keyboard layout configuration
+input * {
+  xkb_layout br
+  xkb_variant abnt2
+}
+
+# Modifier Mod Key
+set $mod Mod4
+
+# Terminal and applications
+set $term kitty
+bindsym $mod+Return exec $term 
+bindsym $mod+d exec firefox
+
+# Basic controls
+bindsym $mod+Shift+q kill
+bindsym $mod+Shift+e exit
+
+# Basic movements
+bindsym $mod+Left focus left
+bindsym $mod+Right focus right
+bindsym $mod+Up focus up
+bindsym $mod+Down focus down
+
+# Workspaces
+bindsym $mod+1 workspace 1
+bindsym $mod+2 workspace 2
+bindsym $mod+Shift+1 move container to workspace 1
+bindsym $mod+Shift+2 move container to workspace 2
+
+# Floating window
+bindsym $mod+Shift+space floating toggle
