@@ -229,7 +229,7 @@ REPO=https://repo-default.voidlinux.org/current
 ARCH=x86_64
 mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys
-XBPS_ARCH=$ARCH xbps-install -S -R "$REPO" -r /mnt base-system void-repo-nonfree linux linux-firmware linux-headers efibootmgr dracut btrfs-progs cryptsetup vim opendoas zsh zsh-completions wayland nftables 
+XBPS_ARCH=$ARCH xbps-install -S -R "$REPO" -r /mnt base-system void-repo-nonfree linux linux-firmware linux-headers efibootmgr dracut btrfs-progs cryptsetup vim opendoas zsh zsh-completions 
   ```
   
 ### Creating the chroot and important system configuration
@@ -413,6 +413,117 @@ if [ -w /proc/acpi/bbswitch ]; then
 fi
 
 exit $RET
+EOF
+  ```
+
+### Sway configuration
+
+  ```sh
+xbps-install -Sy sway rofi wayland wayland-protocols wayland-utils
+  ```
+
+  ```sh
+cat << EOF > $HOME/.config/sway/config
+### ==================== ###
+### Advanced Sway Config ###
+### ==================== ###
+
+# Keyboard layout configuration
+input * {
+  xkb_layout br
+  xkb_variant abnt2
+  repeat_delay 250
+  repeat_rate 30
+}
+
+# Touchpad
+input "type:touchpad" {
+  tap enabled
+  natural_scroll enabled
+  middle_emulation enabled
+}
+
+# Output / Monitor
+# Auto-detect eDP-1 (notebook) + DP/HDMI externo
+#output * resolution 1920x1080 position 0,0 scale 1
+# output DP-1 resolution 2560x1440 position 1920,0 scale 1  # external monitor example
+
+# Autostart apps
+exec_always waybar
+exec_always xdg-desktop-portal
+exec_always xdg-desktop-portal-wlr
+exec_always xdg-user-dirs-update
+
+# Modifier Mod Key
+set $mod Mod4
+default_border normal
+default_floating_border normal
+focus_follows_mouse yes
+mouse_warping none
+
+# Floating windows
+for_window [window_role="pop-up"] floating enable
+for_window [window_type="dialog"] floating enable
+bindsym $mod+Shift+space floating toggle
+
+# Gaps & workspaces
+gaps inner 10
+gaps outer 10
+
+set $ws1 "1:web"
+set $ws2 "2:term"
+set $ws3 "3:code"
+set $ws4 "4:media"
+set $ws5 "5:other"
+
+# Workspaces - Links
+bindsym $mod+1 workspace $ws1
+bindsym $mod+2 workspace $ws2
+bindsym $mod+3 workspace $ws3
+bindsym $mod+4 workspace $ws4
+bindsym $mod+5 workspace $ws5
+bindsym $mod+Shift+1 move container to workspace $ws1
+bindsym $mod+Shift+2 move container to workspace $ws2
+bindsym $mod+Shift+3 move container to workspace $ws3
+bindsym $mod+Shift+4 move container to workspace $ws4
+bindsym $mod+Shift+5 move container to workspace $ws5
+
+# Optional: fixed apps for workspaces
+assign [class="Firefox"] $ws1
+assign [class="Alacritty"] $ws2
+assign [class="Code"] $ws3
+assign [class="Spotify"] $ws4
+
+# Basic controls
+bindsym $mod+Shift+q kill
+bindsym $mod+Shift+e exit
+bindsym $mod+Shift+r restart
+#bindsym $mod+Shift+Delete exec systemctl suspend
+bindsym Print exec grim -t png ~/Pictures/screenshot_$(date +%Y-%m-%d_%H-%M-%S).png
+bindsym $mod+Left focus left
+bindsym $mod+Right focus right
+bindsym $mod+Up focus up
+bindsym $mod+Down focus down
+
+# GPU Offload Automático
+# nvidia-run script for running apps that needs NVIDIA GPU
+bindsym $mod+F1 exec nvidia-run vkcube
+bindsym $mod+F2 exec nvidia-run glxinfo | grep "OpenGL renderer"
+
+# Terminal and applications
+set $term kitty
+bindsym $mod+Return exec $term 
+bindsym $mod+d exec rofi -show run
+bindsym $mod+f exec firefox
+
+# Brightness
+bindsym XF86MonBrightnessUp exec "light -A 10"
+bindsym XF86MonBrightnessDown exec "light -U 10"
+
+# Volume (Pulseaudio)
+bindsym $mod+Shift+Up exec pactl set-sink-volume @DEFAULT_SINK@ +5%
+bindsym $mod+Shift+Down exec pactl set-sink-volume @DEFAULT_SINK@ -5%
+bindsym $mod+Shift+m exec pactl set-sink-mute @DEFAULT_SINK@ toggle
 EOF
   ```
 
