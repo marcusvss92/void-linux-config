@@ -1,0 +1,2 @@
+# Wayland environment variables for Intel usage
+source $HOME/.profile-sway
