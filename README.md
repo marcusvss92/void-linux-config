@@ -90,7 +90,7 @@ MIT License - feel free to use and modify
 - Check the troubleshooting guide
 - Join Void Linux community channels
 
-- :warning:Warning:warning:: This setup includes significant system modifications. Always test in a virtual machine first and maintain backups of important data, or create an additional disk to install it (driver caddy, etc).
+- :warning: Warning :warning:: This setup includes significant system modifications. Always test in a virtual machine first and maintain backups of important data, or create an additional disk to install it (driver caddy, etc).
 
 ### Logging in
 
@@ -364,7 +364,7 @@ reboot
 
 ## Post-installation
 
-### Install NVIDIA video driver and configure it (:warning:FOR REVISION:warning:)
+### Install NVIDIA video driver and configure it (:warning: FOR REVISION :warning:)
   
   ```sh
 doas xbps-install -Sy mesa mesa-dri mesa-vaapi mesa-vdpau mesa-vulkan-intel vdpauinfo nvidia nvidia-firmware nvidia-dkms nvidia-opencl nvidia-gtklibs nvidia-libs nvidia-vaapi-driver libvdpau libva-glx libva-utils vulkan vulkan-loader Vulkan-Headers Vulkan-Tools Vulkan-Utility-LIbraries Vulkan-ValidationLayers wlr-randr wdisplays gstreamer1 gstreamer-vaapi nvtop
@@ -539,19 +539,19 @@ doas ln -s /etc/sv/nftables /var/service/
 doas sv start nftables
   ```
 
-  ```sh(:warning:FOR REVISION:warning:)
+  ```sh(:warning: FOR REVISION :warning:)
 auditd
   ```
 
-  ```sh(:warning:FOR REVISION:warning:)
+  ```sh(:warning: FOR REVISION :warning:)
 fail2ban
   ```
 
-  ```sh(:warning:FOR REVISION:warning:)
+  ```sh(:warning: FOR REVISION :warning:)
 aide
   ```
 
-### Others configurations (:warning:FOR REVISION:warning:)
+### Others configurations (:warning: FOR REVISION :warning:)
   
   ```sh
 truncate -s 2M keyfile.bin # OR dd bs=515 count=4 if=/dev/urandom of=/boot/keyfile.bin
@@ -575,13 +575,13 @@ exit
 reboot
   ```
 
-# References (:warning:FOR REVISION:warning:)
+# References (:warning: FOR REVISION :warning:)
 
 
 
 
 
-### OPTIONAL: LUKS Key Setup (:warning:FOR REVISION:warning:)
+### OPTIONAL: LUKS Key Setup (:warning: FOR REVISION :warning:)
 
 And now to avoid having to enter the password twice on boot, a key will be configured to automatically unlock the encrypted volume on boot. First, generate a random key.
 
