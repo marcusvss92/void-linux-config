@@ -1,6 +1,6 @@
-por# Void Linux Installation with BTRFS and LUKS for Pentesting
+# Void Linux Installation with BTRFS on LUKS in Lenovo LOQ RTX 2050 and iGPU Intel
 
-## Void Live image (Void Linux Documentation - About Libs and Installation): [url-void-linux-documentation-about-libs-and-installation]
+## Void Live image (Void Linux Documentation - About Libs and Installation): https://docs.voidlinux.org/
 
 ## Requirements
 
@@ -22,7 +22,7 @@ por# Void Linux Installation with BTRFS and LUKS for Pentesting
 - Installing efibootmgr
 - **OPTIONAL:** LUKS Key Setup
 
-## Config file
+## Configs file
 
 - dracut.conf
 - rc.conf
@@ -100,13 +100,13 @@ MIT License - feel free to use and modify
 ### Setting keyboard layout
 
   ```sh
-loadkeys $(ls /usr/share/kbd/keymaps/i386/**/*.map.gz | grep br-abnt2)
+loadkeys br-abnt2
   ```
 
 OR
 
   ```sh
-loadkeys $(ls /usr/share/kbd/keymaps/i386/**/*.map.gz | grep us)
+loadkeys us
   ```
 
 ### Connecting to the Wi-Fi router
@@ -114,16 +114,9 @@ loadkeys $(ls /usr/share/kbd/keymaps/i386/**/*.map.gz | grep us)
   ```sh
 cp /etc/wpa_supplicant/wpa_supplicant.conf /etc/wpa_supplicant/wpa_supplicant-<interface>.conf
 wpa_passphrase <ssid> <passphrase> | tee -a /etc/wpa_supplicant/wpa_supplicant-<interface>.conf
+wpa_supplicant -B -i <interface> -c /etc/wpa_supplicant/wpa_supplicant-<interface>.conf
 sv restart dhcpcd
 ip link set up <interface>
-  ```
-
-OR
-
-  ```sh
-cp /etc/wpa_supplicant/wpa_supplicant.conf /etc/wpa_supplicant/wpa_supplicant-<interface>.conf
-wpa_passphrase <SSID> <password> >> /etc/wpa_supplicant/wpa_supplicant-<interface>.conf
-wpa_supplicant -B -i <interface> -c /etc/wpa_supplicant/wpa_supplicant-<interface>.conf
   ```
 
 ### Partitioning the Drive
@@ -131,8 +124,8 @@ wpa_supplicant -B -i <interface> -c /etc/wpa_supplicant/wpa_supplicant-<interfac
 NOTE: Just remember that your drive might use a different name, so please check it out before executing these commands.
 
   ```sh
-dd if=/dev/urandom of=/dev/nvmexn1 bs=1M oflag=direct status=progress 
-fdisk /dev/nvmexn1
+dd if=/dev/urandom of=/dev/nvme1n1 bs=1M oflag=direct status=progress 
+fdisk /dev/nvme1n1
   ```
 
 Then:
@@ -147,7 +140,7 @@ OR you can use these commands below...
 dd if=/dev/urandom of=/dev/nvmexnx bs=1M oflag=direct status=progress
 xbps-install -Su xbps
 xbps-install -Sy parted
-parted -a optimal /dev/nvmexn1
+parted -a optimal /dev/nvme1n1
 mklabel gpt
 unit mib
 mkpart primary 2048s 400
@@ -160,8 +153,8 @@ quit
   
   ```sh
 cryptsetup benchmark
-cryptsetup --type luks2 --crypt aes-xts-plain64 --hash sha512 --key-size 512 luksFormat /dev/nvmexnxp2
-crypsetup luksOpen /dev/nvmexnxp2 cryptvoid
+cryptsetup --type luks2 -c aes-xts-plain64 -h sha512 -s 512 luksFormat /dev/nvme1n1p2
+crypsetup luksOpen /dev/nvme1n1p2 cryptvoid
 mkfs.btrfs -L void /dev/mapper/cryptvoid
 mkfs.vfat -v -n "EFI" /dev/nvmexnxp1
   ```
@@ -194,14 +187,25 @@ mkdir /mnt/var/cache
 btrfs subvolume create /mnt/var/cache/xbps
 btrfs subvolume create /mnt/var/tmp
 btrfs subvolume create /mnt/srv
-mount -o rw,noatime /dev/nvmexnxp1 /mnt/boot/efi
-mount | grep -E "/dev/mapper/cryptvoid|/dev/nvmexnxp1"
+mount -o rw,noatime /dev/nvme1n1p1 /mnt/boot/efi
+mount | grep -E "/dev/mapper/cryptvoid|/dev/nvme1n1p1"
+  ```
+
+### Swap file creation and fstab configuration
+  
+  ```sh
+truncate -s 0 /mnt/swapfile
+chattr +C /mnt/swapfile
+chmod 600 /mnt/swapfile
+dd if=/dev/zero of=/mnt/swapfile bs=1G count=32 status=progress
+mkswap -U clear -L SWAP --file /mnt/wapfile
+swapon /mnt/swapfile
   ```
   
-```sh
-UEFI_UUID=$(blkid -s UUID -o value /dev/nvme0nxp1)
-LUKS_UUID=$(blkid -s UUID -o value /dev/nvme0nxp2)
-ROOT_UUID=$(blkid -s UUID -o value /dev/mapper/cryptvoid)
+  ```sh
+export UEFI_UUID=$(blkid -s UUID -o value /dev/nvme1n1p1)
+export LUKS_UUID=$(blkid -s UUID -o value /dev/nvme1n1p2)
+export ROOT_UUID=$(blkid -s UUID -o value /dev/mapper/cryptvoid)
 
 cat <<EOF > /mnt/etc/fstab
 UUID=$UEFI_UUID /boot/efi vfat defaults,noatime 0 2
@@ -214,23 +218,11 @@ UUID=$ROOT_UUID /.snapshots btrfs $BTRFS_OPTS,subvol=@snapshots 0 2
 /swapfile none swap defaults 0 1
 tmpfs /tmp tmpfs defaults,nosuid,nodev,noatime,mode=1777 0 0
 EOF
-```
-
-### Swap file creation
-  
-  ```sh
-truncate -s 0 /mnt/swapfile
-chattr +C /mnt/swapfile
-#btrfs property set /mnt/swapfile compression none
-chmod 600 /mnt/swapfile
-dd if=/dev/zero of=/mnt/swapfile bs=1G count=32 status=progress
-mkswap -U clear -L SWAP --file /mnt/wapfile
-swapon /mnt/swapfile
   ```
   
 ### Installing the base system
 
-NOTE: This installation is for pentesting, so I will use Glibc for now.
+**NOTE:** We will use Glibc for now to avoid erros and incompatibility with Metasploit and so on.
 
   ```sh
 REPO=https://repo-default.voidlinux.org/current
@@ -243,15 +235,11 @@ XBPS_ARCH=$ARCH xbps-install -S -R "$REPO" -r /mnt base-system void-repo-nonfree
 ### Creating the chroot and important system configuration
   
   ```sh
-for i in /dev /dev/pts /proc /sys /sys/firmware/efi/efivars /run; do mount -B $i /mnt$i; done
+cp -L /etc/resolv.conf /mnt/etc/
+xchroot /mnt/bash
   ```
 
   ```sh
-mount -t proc none /mnt/proc
-mount -t sysfs none /mnt/sys
-mount --rbind /dev /mnt/dev
-mount --rbind /run /mnt/run
-cp -L /etc/resolv.conf /mnt/etc
 chroot /mnt /bin/bash
 
 passwd root
@@ -260,7 +248,7 @@ chsh -s /bin/bash root
 useradd -m -G wheel,audio,video,input,storage,optical,scanner mvinicius
 passwd mvinicius
 
-groupadd Wireshark
+groupadd wireshark
 groupadd netdev
 useradd -m -G wheel,wireshark,dialout,netdev -s $(which zsh) pentester
 passwd pentester
@@ -287,15 +275,54 @@ echo 'en_US.UTF-8 UTF-8' > /etc/default/libc-locales
 xbps-reconfigure -f glibc-locales
 ls /usr/share/zoneinfo
 ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
-
-echo 'add_dracutmodules+=" crypt btrfs resume "' >> /etc/dracut.conf
-echo 'tmpdir=/tmp' >> /etc/dracut.conf
-echo 'early_microcode="yes"' >> /etc/dracut.conf.d/intel_ucode.conf
-dracut --force --hostonly --kver <kernel-version>
-dracut --force /boot/initramfs-$(uname -r).img $(uname -r)
   ```
 
-### Network configuration
+### Dracut configuration
+
+  ```sh
+cat << EOF > /etc/dracut.conf
+# PUT YOUR CONFIG IN separate files
+# in /etc/dracut.conf.d named "<name>.conf"
+# SEE man dracut.conf(5) for options
+hostonly="yes"
+hostonly_mode="sloppy"	# or strict
+compress="gzip"
+use_fstab="yes"
+tmpdir=/tmp
+EOF
+  ```
+
+  ```sh
+cat << EOF > /etc/dracut.conf.d/10-luks.conf
+add_dracutmodules+=" crypt dm btrfs resume "
+omit_dracutmodules=" systemd systemd-initrd dracut-systemd systemd-udevd "
+install_items+=" /etc/crypttab /etc/fstab "
+kernel_cmdline+=" rd.luks.uuid=$LUKS_UUID rd.luks.allow-discards root=UUID=$ROOT_UUID rootfstype=btrfs rw "
+filesystems+=" btrfs vfat "
+EOF
+  ```
+
+  ```sh
+cat << EOF > /etc/dracut.conf.d/60-graphics.conf
+# Essential video modules
+add_drivers+=" nvidia nvidia_modeset nvidia_uvm nvidia_drm "
+add_drivers+=" i915 "
+
+# Replicating the NVIDIA bootloader configuration for compatibility
+kernel_cmdline+=" nvidia-drm.modeset=1 nvidia-drm.fbdev=1 nvidia.NVreg_OpenRmEnableUnsupportedGpus=1 "
+
+# Install necessary firmwares
+install_items+=" /lib/firmware/i915/* "
+EOF
+  ```
+
+  ```sh
+cat << EOF > /etc/dracut.conf.d/intel_ucode.conf
+early_microcode="yes"
+EOF
+  ```
+
+### Network and session management configuration
 
   ```sh
 cat <<EOF > /etc/hosts
@@ -308,22 +335,11 @@ cat <<EOF > /etc/hosts
 EOF
   ```
 
-! OPTIONAL ! Copy the proper `wpa_supplicant` config file to the system's mountpoint and run the proper `wpa_supplicant` steps to set Wi-Fi or stuff you need. Then, register and start the needed services:
-
   ```sh
-cp /etc/wpa_supplicant/wpa_supplicant-<interface>.conf /mnt/etc/wpa_supplicant/
-  ```
-
-  ```sh
-doas ln -s /etc/sv/dhcpcd /var/service/
-doas ln -s /etc/sv/wpa_supplicant /var/service/
-  ```
-
-OR use the NetworkManager:
-
-  ```sh
-xbps-install -S NetworkManager
+xbps-install -S NetworkManager elogind
 doas ln -s /etc/sv/NetworkManager /var/service
+doas ln -s /etc/sv/dbus /var/service
+doas ln -s /etc/sv/elogind /var/service
   ```
 
 ### Bootloader configuration
@@ -334,7 +350,13 @@ efibootmgr --create \
 --part 1 \
 --label "Void Linux Hardened" \
 --loader /vmlinuz-$(uname -r) \
---unicode "root=/dev/mapper/cryptvoid initrd=\\initramfs-$(uname -r).img"
+--unicode "root=UUID=$ROOT_UUID rootfstype=btrfs initrd=\\initramfs-$(uname -r).img"
+efibootmgr --create \
+--disk /dev/nvme1n1 \
+--part 1 \
+--label "Void Linux" \
+--loader /vmlinuz-$(uname -r) \
+--unicode "rd.luks.uuid=$LUKS_UUID rd.luks.allow-discards root=UUID=$ROOT_UUID rootfstype=btrfs rw initrd=\\initramfs-$(uname -r).img nvidia-drm.modeset=1 nvidia-drm.fbdev=1 nvidia.NVreg_OpenRmEnableUnsupportedGpus=1 quiet loglevel=3"
   ```
 
 ### Unmounting mountpoint
@@ -344,43 +366,6 @@ exit
 exit
 umount -R /mnt
 reboot
-  ```
-
-### LUKS Key Setup (:warning:FOR REVISION:warning:)
-
-And now to avoid having to enter the password twice on boot, a key will be configured to automatically unlock the encrypted volume on boot. First, generate a random key.
-
-  ```sh
-[xchroot /mnt] # dd bs=1 count=64 if=/dev/urandom of=/boot/volume.key
-64+0 records in
-64+0 records out
-64 bytes copied, 0.000662757 s, 96.6 kB/s
-  ```
-
-Next, add the key to the encrypted volume.
-
-  ```sh
-[xchroot /mnt] # cryptsetup luksAddKey /dev/sda1 /boot/volume.key
-Enter any existing passphrase:
-  ```
-
-Change the permissions to protect the generated key.
-
-  ```sh
-[xchroot /mnt] # chmod 000 /boot/volume.key
-[xchroot /mnt] # chmod -R g-rwx,o-rwx /boot
-  ```
-
-This keyfile also needs to be added to /etc/crypttab. Again, this will be /dev/sda2 on EFI systems.
-
-  ```sh
-voidvm   /dev/sda1   /boot/volume.key   luks
-  ```
-
-And then the keyfile and crypttab need to be included in the initramfs. Create a new file at /etc/dracut.conf.d/10-crypt.conf with the following line:
-
-  ```sh
-install_items+=" /boot/volume.key /etc/crypttab "
   ```
 
 ## Post-installation
@@ -429,29 +414,6 @@ fi
 
 exit $RET
 EOF
-  ```
-
-  ```sh
-doas mkdir -p /etc/sv/bbswitch
-
-doas tee /etc/sv/bbswitch/run << 'EOF'
-#!/bin/sh
-# Runit service for setting flag OFF in GPU NVIDIA at the boot process
-echo OFF > /proc/acpi/bbswitch
-exec sleep infinity
-
-# How to configure it:
-# 1. doas chmod +x /etc/sv/bbswitch/run
-# 2. doas ln -s /etc/sv/bbswitch /var/service
-
-# How to test it:
-# 1. Reboot the system.
-# 2. Verify the status: cat /proc/acpi/bbswitch # It must show "OFF": 0000:01:00.0 OFF
-# 3. nvidia-run glxinfo | grep "OpenGL renderer"
-EOF
-
-doas chmod +x /etc/sv/bbswitch/run
-doas ln -s /etc/sv/bbswitch /var/service/
   ```
 
 ### Security configuration
@@ -508,6 +470,45 @@ exit
 reboot
   ```
 
-# References
+# References (:warning:FOR REVISION:warning:)
 
-Hyprland Void Dots: https://github.com/void-land/hyprland-void-dots
+
+
+
+
+### OPTIONAL: LUKS Key Setup (:warning:FOR REVISION:warning:)
+
+And now to avoid having to enter the password twice on boot, a key will be configured to automatically unlock the encrypted volume on boot. First, generate a random key.
+
+  ```sh
+[xchroot /mnt] # dd bs=1 count=64 if=/dev/urandom of=/boot/volume.key
+64+0 records in
+64+0 records out
+64 bytes copied, 0.000662757 s, 96.6 kB/s
+  ```
+
+Next, add the key to the encrypted volume.
+
+  ```sh
+[xchroot /mnt] # cryptsetup luksAddKey /dev/sda1 /boot/volume.key
+Enter any existing passphrase:
+  ```
+
+Change the permissions to protect the generated key.
+
+  ```sh
+[xchroot /mnt] # chmod 000 /boot/volume.key
+[xchroot /mnt] # chmod -R g-rwx,o-rwx /boot
+  ```
+
+This keyfile also needs to be added to /etc/crypttab. Again, this will be /dev/sda2 on EFI systems.
+
+  ```sh
+voidvm   /dev/sda1   /boot/volume.key   luks
+  ```
+
+And then the keyfile and crypttab need to be included in the initramfs. Create a new file at /etc/dracut.conf.d/10-crypt.conf with the following line:
+
+  ```sh
+install_items+=" /boot/volume.key /etc/crypttab "
+  ```
