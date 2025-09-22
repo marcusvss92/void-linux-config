@@ -1,0 +1,55 @@
+#!/bin/bash
+# /etc/sv/fail2ban/run
+# Serviço runit para fail2ban
+
+exec 2>&1
+
+# Verificar se nftables está rodando
+while ! nft list tables >/dev/null 2>&1; do
+    echo "Aguardando nftables estar ativo..."
+    sleep 2
+done
+
+# Configurar fail2ban para usar nftables
+if [ ! -f /etc/fail2ban/jail.local ]; then
+    cat > /etc/fail2ban/jail.local << 'EOF'
+[DEFAULT]
+# Usar nftables como backend
+banaction = nftables-multiport
+banaction_allports = nftables-allports
+
+# Configurações gerais
+bantime = 3600
+findtime = 600
+maxretry = 5
+
+[sshd]
+enabled = true
+port = ssh
+filter = sshd
+logpath = /var/log/auth.log
+maxretry = 3
+
+# Proteção contra scan de portas
+[nmap]
+enabled = true
+filter = nmap
+action = nftables-allports[name=nmap, protocol=tcp]
+logpath = /var/log/syslog
+maxretry = 1
+bantime = 86400
+
+EOF
+fi
+
+# Criar filtro para nmap se não existir
+if [ ! -f /etc/fail2ban/filter.d/nmap.conf ]; then
+    cat > /etc/fail2ban/filter.d/nmap.conf << 'EOF'
+[Definition]
+failregex = kernel: DROP.*SRC=<HOST>.*DPT=(22|23|53|80|110|143|443|993|995)
+ignoreregex = 
+EOF
+fi
+
+echo "Iniciando fail2ban..."
+exec fail2ban-server -f -x -s /var/run/fail2ban/fail2ban.sock
